@@ -14,7 +14,7 @@ void setup() {
   pinMode(Lswitch, INPUT_PULLUP); 
   pinMode(stepPin,OUTPUT); 
   pinMode(dirPinmotor,OUTPUT);
-  Serial.begin(250000);
+  Serial.begin(19200);
 }
 void loop() {
 {
@@ -24,8 +24,9 @@ void loop() {
     if((digitalRead(Lswitch) == HIGH))
     {
       servo.write(pos); 
-      digitalWrite(dirPinmotor,LOW);
-      motorstep(); 
+      digitalWrite(dirPinmotor,HIGH);
+      motorstep();
+      delay(10); 
     } 
      else
     {
@@ -43,24 +44,26 @@ void loop() {
     Serial.println(2);
     if((digitalRead(Lswitch) == HIGH))
     {
-      digitalWrite(dirPinmotor,LOW);
-      for(int x = 0; x < 100; x++)
-      {
-        motorstep(); 
-      }
-      pos += 10;
-      servo.write(pos);
-      delay(1000);
-      Serial.println(pos);
-      //servo.write(pos); 
       digitalWrite(dirPinmotor,HIGH);
       for(int x = 0; x < 100; x++)
       {
         motorstep(); 
+        delay(1);
+      }
+      pos += 10;
+      servo.write(pos);
+      delay(300);
+      Serial.println(pos);
+      //servo.write(pos); 
+      digitalWrite(dirPinmotor,LOW);
+      for(int x = 0; x < 100; x++)
+      {
+        motorstep(); 
+        delay(1);
       } 
       pos += 10;
       servo.write(pos);
-      delay(1000);
+      delay(300);
       Serial.println(pos);
       
     } 
