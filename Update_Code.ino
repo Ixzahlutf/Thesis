@@ -8,20 +8,27 @@ int pos = 0;    // variable to store the servo position
 boolean motorRotated = false;
 boolean motorRotated2 = false;
 
+int dist; //actual distance measurements of LiDAR
+//int strength; //signal strength of LiDAR
+//float temprature;
+int check;  //save check value
+int i;
+int uart[9];  //save data measured by LiDAR
+const int HEADER=0x59;  //frame header of data package
+
 void setup() {
   // Sets the two pins as Outputs
   servo.attach(9);  // attaches the servo on pin 9 to the servo object
   pinMode(Lswitch, INPUT_PULLUP); 
   pinMode(stepPin,OUTPUT); 
   pinMode(dirPinmotor,OUTPUT);
-  Serial.begin(19200);
+  Serial.begin(115200); 
+  Serial2.begin(115200);
 }
 void loop() {
-{
   while(!motorRotated)
   {
-    Serial.println(1);
-    if((digitalRead(Lswitch) == HIGH))
+    if((digitalRead(Lswitch) == LOW))
     {
       servo.write(pos); 
       digitalWrite(dirPinmotor,HIGH);
@@ -34,47 +41,31 @@ void loop() {
     }
    return;
   }
-}
 
-  {
   while(!motorRotated2)
   {
     if(pos<100)
     {
-    Serial.println(2);
-    if((digitalRead(Lswitch) == HIGH))
-    {
-      digitalWrite(dirPinmotor,HIGH);
-      for(int x = 0; x < 100; x++)
-      {
-        motorstep(); 
-        delay(1);
-      }
-      pos += 10;
-      servo.write(pos);
-      delay(300);
-      Serial.println(pos);
-      //servo.write(pos); 
       digitalWrite(dirPinmotor,LOW);
-      for(int x = 0; x < 100; x++)
-      {
-        motorstep(); 
-        delay(1);
-      } 
+      lidar();
+      motorstep(); 
       pos += 10;
       servo.write(pos);
-      delay(300);
       Serial.println(pos);
       
+      digitalWrite(dirPinmotor,HIGH);
+      lidar();
+      motorstep(); 
+      pos += 10;
+      servo.write(pos);
+      Serial.println(pos);
     } 
-    }
      else
     {
      motorRotated = true;
     }
    return;
   }
-}
 }
 
 void motorstep(){
@@ -83,3 +74,57 @@ void motorstep(){
   digitalWrite(stepPin,LOW); 
   delayMicroseconds(500);  
  }
+
+ void lidar(){
+  float motor_angle = 0;
+  for(int x = 0; x <100;) {
+  if (Serial2.available()) {  //check if serial port has data input
+    if(Serial2.read() == HEADER) {  //assess data package frame header 0x59
+      uart[0]=HEADER;
+      if (Serial2.read() == HEADER) { //assess data package frame header 0x59
+        uart[1] = HEADER;
+        for (i = 2; i < 9; i++) { //save data in array
+          uart[i] = Serial2.read();
+        }
+        check = uart[0] + uart[1] + uart[2] + uart[3] + uart[4] + uart[5] + uart[6] + uart[7];
+        if (uart[8] == (check & 0xff)){ //verify the received data as per protocol
+          // Cek nilai sudut
+          //  if (ams5600.detectMagnet() == 1 ) {
+          //   if (angle_in != Angle()) {
+          //   angle_in = Angle();
+          //   //Serial.print("Sudut = ");
+          //   //Serial.println(angle_in);
+          // }}
+
+        //  if (motor_angle == 0){
+          motor_angle = motor_angle + 1.8;
+        //  }
+        //  else{
+        //    motor_angle = motor_angle - 1.8;
+        //  }
+          Serial.print(x); 
+          Serial.print(". Sudut = ");
+          Serial.print(motor_angle);
+       
+         motorstep();
+        
+
+          dist = (uart[2] + uart[3] * 256);     //calculate distance value
+          //strength = uart[4] + uart[5] * 256; //calculate signal strength value
+          //temprature = uart[6] + uart[7] *256;//calculate chip temprature
+          //temprature = temprature/8 - 256;
+          Serial.print("  dist = ");
+          Serial.println(dist); //output measure distance value of LiDAR
+          x++;
+      
+          // delay(100);
+        }
+      }
+    }
+  }
+  else{
+    Serial2.println("Sensor Not Detected");
+    // delay(100);
+  }
+}
+}
